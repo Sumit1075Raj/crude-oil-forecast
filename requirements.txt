@@ -17,3 +17,4 @@ textblob
 newsapi-python
 fredapi
 protobuf==3.20.3
+tensorflow-cpu
