@@ -206,6 +206,8 @@ def load_features():
 
 @st.cache_resource(show_spinner="Loading ML models …")
 def load_models():
+    st.sidebar.write(f"LSTM exists: {(MODELS_DIR / 'lstm_final.keras').exists()}")
+    st.sidebar.write(f"Models dir: {MODELS_DIR}")
     """Load all trained model files from disk."""
     models = {}
     try:
