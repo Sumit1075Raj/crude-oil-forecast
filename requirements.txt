@@ -15,3 +15,5 @@ statsmodels
 textblob
 newsapi-python
 fredapi
+altair
+protobuf
