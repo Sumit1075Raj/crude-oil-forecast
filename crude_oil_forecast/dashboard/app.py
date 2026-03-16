@@ -683,14 +683,8 @@ def main():
                 fore_dates, fore_prices = get_forecast(feat_df, models)
             if fore_dates is not None:
                 fore_prices = sanitize(fore_prices)
-                st.write(f"Forecast min: {fore_prices.min():.4f}")
-                st.write(f"Forecast max: {fore_prices.max():.4f}")
-                st.write(f"Forecast mean: {fore_prices.mean():.4f}")
-                st.write(f"Current price: {feat_df['close'].iloc[-1]:.4f}")
-                st.write(f"Hist prices min: {feat_df['close'].min():.4f}")
-                st.write(f"Hist prices max: {feat_df['close'].max():.4f}")
                 st.plotly_chart(
-                    chart_forecast(feat_df.index, feat_df["close"].values,
+                    chart_forecast(feat_df.index[-90:], feat_df["close"].values[-90:],
                                    fore_dates, fore_prices),
                     use_container_width=True
                 )
