@@ -216,8 +216,8 @@ def load_models():
         if lstm_path.exists():
             models["lstm"] = tf.keras.models.load_model(str(lstm_path))
     except Exception as e:
-        pass  # LSTM optional — RF+XGB still work
-
+        st.error(f"LSTM load failed: {e}")
+        st.error(f"MODELS_DIR = {MODELS_DIR}")
     for name, fname in [
         ("rf",           "random_forest.pkl"),
         ("xgb",          "xgboost.pkl"),
