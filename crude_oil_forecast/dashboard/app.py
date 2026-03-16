@@ -184,15 +184,25 @@ PLOTLY_LAYOUT = dict(
 
 @st.cache_data(ttl=REFRESH_INTERVAL_SECONDS, show_spinner="Fetching latest oil data …")
 def load_data():
-    """Load (or re-fetch) raw merged dataset."""
+    """Load raw dataset — from CSV if exists, else fetch fresh."""
     raw_path = DATA_RAW / "raw_merged.csv"
     if raw_path.exists():
         df = pd.read_csv(raw_path, index_col="date", parse_dates=True)
         return df
-    # Fresh fetch
-    from scripts.data_ingestion import ingest_all
-    return ingest_all(save=True)
-
+    # CSV not found — fetch fresh from yfinance (no API key needed)
+    try:
+        import yfinance as yf
+        brent = yf.download("BZ=F", start="2010-01-01", progress=False, auto_adjust=True)
+        if isinstance(brent.columns, pd.MultiIndex):
+            brent.columns = [c[0].lower() for c in brent.columns]
+        else:
+            brent.columns = [c.lower() for c in brent.columns]
+        brent.index.name = "date"
+        brent = brent.dropna(subset=["close"])
+        return brent
+    except Exception as e:
+        st.error(f"Failed to load data: {e}")
+        return None
 
 @st.cache_data(ttl=REFRESH_INTERVAL_SECONDS, show_spinner="Engineering features …")
 def load_features():
@@ -549,8 +559,6 @@ def render_sidebar():
 
 def main():
     # Header
-    st.write(f"raw_df shape: {raw_df.shape}")
-    st.write(f"feat_df: {feat_df.shape if feat_df is not None else 'None'}")
     st.write(f"raw_df close mean: {raw_df['close'].mean():.2f}")
     st.markdown(
         "<p class='main-title'>🛢️ CrudeEdge</p>"
@@ -567,9 +575,13 @@ def main():
         st.rerun()
 
     raw_df   = load_data()
+    if raw_df is None:
+        st.error("Could not load oil price data. Check internet connection.")
+        st.stop()
+
     feat_df  = load_features()
     models   = load_models()
-
+    
     # Filter by date range
     cutoff   = datetime.today() - timedelta(days=365 * years)
     raw_view = raw_df[raw_df.index >= cutoff]
