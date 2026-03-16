@@ -549,6 +549,9 @@ def render_sidebar():
 
 def main():
     # Header
+    st.write(f"raw_df shape: {raw_df.shape}")
+    st.write(f"feat_df: {feat_df.shape if feat_df is not None else 'None'}")
+    st.write(f"raw_df close mean: {raw_df['close'].mean():.2f}")
     st.markdown(
         "<p class='main-title'>🛢️ CrudeEdge</p>"
         "<p class='sub-title'>INDIA OIL PRICE INTELLIGENCE PLATFORM</p>",
