@@ -683,6 +683,7 @@ def main():
                 fore_dates, fore_prices = get_forecast(feat_df, models)
             if fore_dates is not None:
                 fore_prices = sanitize(fore_prices)
+                st.write(f"hist_prices passed to chart: {feat_df['close'].values[-90:][0]:.2f} to {feat_df['close'].values[-90:][-1]:.2f}")
                 st.write(f"feat_df close last 5: {feat_df['close'].values[-5:]}")
                 st.write(f"raw_df close last 5: {raw_df['close'].values[-5:]}")
                 st.plotly_chart(
