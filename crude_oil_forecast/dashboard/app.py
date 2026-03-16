@@ -396,14 +396,12 @@ def chart_actual_vs_predicted(dates, actual, predicted):
 
 def chart_forecast(hist_dates, hist_prices, fore_dates, fore_prices):
     fig = go.Figure()
-    # Historical last 90 days
     n   = min(90, len(hist_dates))
     fig.add_trace(go.Scatter(
         x=hist_dates[-n:], y=hist_prices[-n:],
         name="Historical", mode="lines",
         line=dict(color="#c9d1d9", width=1.5)
     ))
-    # Confidence band ±5%
     fig.add_trace(go.Scatter(
         x=list(fore_dates) + list(fore_dates[::-1]),
         y=list(fore_prices * 1.05) + list(fore_prices[::-1] * 0.95),
@@ -411,13 +409,11 @@ def chart_forecast(hist_dates, hist_prices, fore_dates, fore_prices):
         line=dict(color="rgba(0,0,0,0)"),
         name="±5% Band", showlegend=True,
     ))
-    # Forecast line
     fig.add_trace(go.Scatter(
         x=fore_dates, y=fore_prices,
         name="30-Day Forecast", mode="lines",
         line=dict(color="#00d4ff", width=2.5)
     ))
-    # Vertical separator — scatter trace avoids Plotly Timestamp bug
     fig.add_trace(go.Scatter(
         x=[hist_dates[-1], hist_dates[-1]],
         y=[float(fore_prices.min()) * 0.95, float(fore_prices.max()) * 1.05],
@@ -426,23 +422,22 @@ def chart_forecast(hist_dates, hist_prices, fore_dates, fore_prices):
         name="Forecast Start",
         showlegend=True,
     ))
+    y_min = float(min(np.min(hist_prices[-n:]), np.min(fore_prices))) * 0.95
+    y_max = float(max(np.max(hist_prices[-n:]), np.max(fore_prices))) * 1.05
     fig.update_layout(
-         **PLOTLY_LAYOUT,
+        paper_bgcolor="#060a10",
+        plot_bgcolor="#0d1117",
+        font=dict(family="JetBrains Mono", color="#c9d1d9"),
+        legend=dict(bgcolor="#161b22", bordercolor="#21262d"),
+        margin=dict(l=40, r=30, t=50, b=40),
         title="Brent Crude — 30-Day Price Forecast",
         yaxis_title="Price (USD/bbl)",
-        yaxis=dict(
-            gridcolor="#21262d",
-            linecolor="#21262d",
-            showgrid=True,
-            range=[
-                min(hist_prices.min(), fore_prices.min()) * 0.95,
-                max(hist_prices.max(), fore_prices.max()) * 1.05,
-            ]
-        ),
+        xaxis=dict(gridcolor="#21262d", linecolor="#21262d", showgrid=True),
+        yaxis=dict(gridcolor="#21262d", linecolor="#21262d", showgrid=True,
+                   range=[y_min, y_max]),
         height=420,
     )
     return fig
-
 
 def chart_feature_importance(model, feat_cols, model_name="XGBoost"):
     imp  = model.feature_importances_
