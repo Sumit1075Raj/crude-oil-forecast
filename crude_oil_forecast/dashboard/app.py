@@ -212,16 +212,14 @@ def load_data():
 @st.cache_data(ttl=REFRESH_INTERVAL_SECONDS, show_spinner="Engineering features …")
 def load_features():
     """Load processed feature matrix."""
-    possible_paths = [
-        DATA_PROCESSED / "features.csv",
-        Path(__file__).resolve().parent.parent / "data" / "processed" / "features.csv",
-        Path("/mount/src/crude-oil-forecast/crude_oil_forecast/data/processed/features.csv"),
-    ]
-    for feat_path in possible_paths:
-        if feat_path.exists():
-            df = pd.read_csv(feat_path, index_col="date", parse_dates=True)
-            return df
-    return None@st.cache_resource(show_spinner="Loading ML models …")
+    feat_path = DATA_PROCESSED / "features.csv"
+    if feat_path.exists():
+        df = pd.read_csv(feat_path, index_col="date", parse_dates=True)
+        return df
+    return None
+
+
+@st.cache_resource(show_spinner="Loading ML models …")
 def load_models():
     st.sidebar.write(f"LSTM exists: {(MODELS_DIR / 'lstm_final.keras').exists()}")
     st.sidebar.write(f"Models dir: {MODELS_DIR}")
@@ -566,7 +564,6 @@ def render_sidebar():
 
 def main():
     # Header
-    st.write(f"raw_df close mean: {raw_df['close'].mean():.2f}")
     st.markdown(
         "<p class='main-title'>🛢️ CrudeEdge</p>"
         "<p class='sub-title'>INDIA OIL PRICE INTELLIGENCE PLATFORM</p>",
@@ -588,11 +585,10 @@ def main():
 
     feat_df  = load_features()
     models   = load_models()
-    
+
     # Filter by date range
     cutoff   = datetime.today() - timedelta(days=365 * years)
     raw_view = raw_df[raw_df.index >= cutoff]
-
     # ── TOP METRIC CARDS ───────────────────────────────────────────────────
     current_price = raw_df["close"].iloc[-1]
     prev_price    = raw_df["close"].iloc[-2]
