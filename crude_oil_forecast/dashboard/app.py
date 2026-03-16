@@ -303,28 +303,51 @@ def get_ensemble_predictions(feat_df, models):
 def get_forecast(feat_df, models):
     """Run 30-day iterative forecast from the last known date."""
     from features.feature_engineering import get_feature_columns
-    feat_cols   = get_feature_columns(feat_df)
-    feat_scaler = models.get("feat_scaler")
-    price_scaler  = models.get("price_scaler")
-    if feat_scaler is None or price_scaler is None or "lstm" not in models:
+    feat_cols    = get_feature_columns(feat_df)
+    feat_scaler  = models.get("feat_scaler")
+    price_scaler = models.get("price_scaler")
+
+    if feat_scaler is None or price_scaler is None:
+        return None, None
+    if "rf" not in models and "xgb" not in models:
         return None, None
 
-    X_all       = feat_scaler.transform(feat_df[feat_cols])
-    last_seq    = X_all[-LOOKBACK_WINDOW:]
-    last_flat   = X_all[-1]
-    last_price  = feat_df["close"].iloc[-1]
+    X_all      = feat_scaler.transform(feat_df[feat_cols])
+    last_seq   = X_all[-LOOKBACK_WINDOW:]
+    last_flat  = X_all[-1]
 
-    from scripts.train_models import forecast_30_days
-    forecast = forecast_30_days(
-        models["lstm"], models["rf"], models["xgb"],
-        last_seq, last_flat, price_scaler,
-        n_days=FORECAST_HORIZON
+    rf_model   = models.get("rf")
+    xgb_model  = models.get("xgb")
+    lstm_model = models.get("lstm")
+
+    if lstm_model is not None:
+        from scripts.train_models import forecast_30_days
+        fore = forecast_30_days(
+            lstm_model, rf_model, xgb_model,
+            last_seq, last_flat, price_scaler,
+            n_days=FORECAST_HORIZON
+        )
+    else:
+        # RF + XGB only — predict directly in USD
+        fore = np.array([
+            rf_model.predict(last_flat[np.newaxis])[0] * 0.5 +
+            xgb_model.predict(last_flat[np.newaxis])[0] * 0.5
+            for _ in range(FORECAST_HORIZON)
+        ])
+
+    # Safety check — if values look scaled (below 10) inverse transform
+    fore = sanitize(fore)
+    if np.nanmean(fore) < 10:
+        fore = price_scaler.inverse_transform(
+            fore.reshape(-1, 1)
+        ).ravel()
+
+    last_date = feat_df.index[-1]
+    bdays     = pd.bdate_range(
+        start=last_date + timedelta(days=1),
+        periods=FORECAST_HORIZON
     )
-    last_date    = feat_df.index[-1]
-    bdays        = pd.bdate_range(start=last_date + timedelta(days=1), periods=FORECAST_HORIZON)
-    return bdays, forecast
-
-
+    return bdays, fore
 def get_direction_prediction(feat_df, models):
     """Predict direction (UP/DOWN) for the NEXT trading day."""
     from features.feature_engineering import get_feature_columns
