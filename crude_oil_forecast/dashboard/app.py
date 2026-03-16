@@ -642,11 +642,15 @@ def main():
 
     # TAB 1 — Price & Predictions
     with tab1:
-        st.plotly_chart(chart_price_history(raw_view), use_container_width=True)
-
+        st.plotly_chart(chart_price_history(raw_df.tail(500)), use_container_width=True)
         if feat_df is not None and models and "rf" in models and "xgb" in models:
             with st.spinner("Running ensemble inference …"):
                 dates, actual, predicted = get_ensemble_predictions(feat_df, models)
+            # Fix scale if predictions are in wrong range
+            if actual is not None and np.nanmean(actual) < 10:
+                price_scaler = models.get("price_scaler")
+                actual    = price_scaler.inverse_transform(actual.reshape(-1,1)).ravel()
+                predicted = price_scaler.inverse_transform(predicted.reshape(-1,1)).ravel()
             if dates is not None:
                 # ── Sanitize predictions before any metric computation ──────
                 min_len  = min(len(actual), len(predicted))
@@ -679,7 +683,6 @@ def main():
                     m4.metric("Directional Acc.", f"{dir_acc:.1f}%")
         else:
             st.info("🔧 Train the models first using **scripts/train_models.py** to see predictions here.")
-
     # TAB 2 — 30-Day Forecast
     with tab2:
         if feat_df is not None and models and "rf" in models and "xgb" in models:
