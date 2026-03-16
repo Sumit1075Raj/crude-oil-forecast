@@ -430,6 +430,15 @@ def chart_forecast(hist_dates, hist_prices, fore_dates, fore_prices):
         **PLOTLY_LAYOUT,
         title="Brent Crude — 30-Day Price Forecast",
         yaxis_title="Price (USD/bbl)",
+        yaxis=dict(
+            gridcolor="#21262d",
+            linecolor="#21262d",
+            showgrid=True,
+            range=[
+                min(hist_prices[-90:].min(), fore_prices.min()) * 0.95,
+                max(hist_prices[-90:].max(), fore_prices.max()) * 1.05,
+            ]
+        ),
         height=420,
     )
     return fig
