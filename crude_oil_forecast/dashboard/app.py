@@ -683,6 +683,8 @@ def main():
                 fore_dates, fore_prices = get_forecast(feat_df, models)
             if fore_dates is not None:
                 fore_prices = sanitize(fore_prices)
+                st.write(f"feat_df close last 5: {feat_df['close'].values[-5:]}")
+                st.write(f"raw_df close last 5: {raw_df['close'].values[-5:]}")
                 st.plotly_chart(
                     chart_forecast(feat_df.index[-90:], feat_df["close"].values[-90:],
                                    fore_dates, fore_prices),
