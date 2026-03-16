@@ -1,0 +1,17 @@
+pandas
+numpy
+scikit-learn
+xgboost
+streamlit
+plotly
+matplotlib
+seaborn
+requests
+python-dotenv
+yfinance
+joblib
+scipy
+statsmodels
+textblob
+newsapi-python
+fredapi
