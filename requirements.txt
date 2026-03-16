@@ -2,7 +2,8 @@ pandas
 numpy
 scikit-learn
 xgboost
-streamlit
+streamlit==1.28.0
+altair==4.2.2
 plotly
 matplotlib
 seaborn
@@ -15,5 +16,4 @@ statsmodels
 textblob
 newsapi-python
 fredapi
-altair
-protobuf
+protobuf==3.20.3
