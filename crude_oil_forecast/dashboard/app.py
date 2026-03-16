@@ -184,12 +184,19 @@ PLOTLY_LAYOUT = dict(
 
 @st.cache_data(ttl=REFRESH_INTERVAL_SECONDS, show_spinner="Fetching latest oil data …")
 def load_data():
-    """Load raw dataset — from CSV if exists, else fetch fresh."""
-    raw_path = DATA_RAW / "raw_merged.csv"
-    if raw_path.exists():
-        df = pd.read_csv(raw_path, index_col="date", parse_dates=True)
-        return df
-    # CSV not found — fetch fresh from yfinance (no API key needed)
+    """Load raw dataset."""
+    # Try multiple possible paths
+    possible_paths = [
+        DATA_RAW / "raw_merged.csv",
+        Path(__file__).resolve().parent.parent / "data" / "raw" / "raw_merged.csv",
+        Path("/mount/src/crude-oil-forecast/crude_oil_forecast/data/raw/raw_merged.csv"),
+    ]
+    for raw_path in possible_paths:
+        if raw_path.exists():
+            df = pd.read_csv(raw_path, index_col="date", parse_dates=True)
+            return df
+
+    # Fallback — fetch fresh from yfinance
     try:
         import yfinance as yf
         brent = yf.download("BZ=F", start="2010-01-01", progress=False, auto_adjust=True)
@@ -198,23 +205,23 @@ def load_data():
         else:
             brent.columns = [c.lower() for c in brent.columns]
         brent.index.name = "date"
-        brent = brent.dropna(subset=["close"])
-        return brent
+        return brent.dropna(subset=["close"])
     except Exception as e:
         st.error(f"Failed to load data: {e}")
         return None
-
 @st.cache_data(ttl=REFRESH_INTERVAL_SECONDS, show_spinner="Engineering features …")
 def load_features():
     """Load processed feature matrix."""
-    feat_path = DATA_PROCESSED / "features.csv"
-    if feat_path.exists():
-        df = pd.read_csv(feat_path, index_col="date", parse_dates=True)
-        return df
-    return None
-
-
-@st.cache_resource(show_spinner="Loading ML models …")
+    possible_paths = [
+        DATA_PROCESSED / "features.csv",
+        Path(__file__).resolve().parent.parent / "data" / "processed" / "features.csv",
+        Path("/mount/src/crude-oil-forecast/crude_oil_forecast/data/processed/features.csv"),
+    ]
+    for feat_path in possible_paths:
+        if feat_path.exists():
+            df = pd.read_csv(feat_path, index_col="date", parse_dates=True)
+            return df
+    return None@st.cache_resource(show_spinner="Loading ML models …")
 def load_models():
     st.sidebar.write(f"LSTM exists: {(MODELS_DIR / 'lstm_final.keras').exists()}")
     st.sidebar.write(f"Models dir: {MODELS_DIR}")
